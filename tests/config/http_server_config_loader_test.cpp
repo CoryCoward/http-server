@@ -47,10 +47,13 @@ private:
 
 TEST(HttpServerConfigLoaderTest, LoadsDefaultConfiguration)
 {
+    // Arrange
     HttpServerConfigLoader config_loader;
 
+    // Act
     const auto result = config_loader.load();
 
+    // Assert
     ASSERT_TRUE(result) << result.error().diagnostic;
     EXPECT_TRUE(config_loader.is_loaded());
     EXPECT_EQ(config_loader.config().tcp_server.port, 8080);
@@ -59,13 +62,16 @@ TEST(HttpServerConfigLoaderTest, LoadsDefaultConfiguration)
 
 TEST(HttpServerConfigLoaderTest, LoadsSpecifiedConfiguration)
 {
+    // Arrange
     const TemporaryConfigFile config_file{"[tcp_server]\n"
                                           "port = 9090\n"
                                           "max_backlog = 10\n"};
     HttpServerConfigLoader config_loader;
 
+    // Act
     const auto result = config_loader.load(config_file.path());
 
+    // Assert
     ASSERT_TRUE(result) << result.error().diagnostic;
     EXPECT_TRUE(config_loader.is_loaded());
     EXPECT_EQ(config_loader.config().tcp_server.port, 9090);
@@ -74,12 +80,15 @@ TEST(HttpServerConfigLoaderTest, LoadsSpecifiedConfiguration)
 
 TEST(HttpServerConfigLoaderTest, RejectsMissingRequiredValue)
 {
+    // Arrange
     const TemporaryConfigFile config_file{"[tcp_server]\n"
                                           "port = 8080\n"};
     HttpServerConfigLoader config_loader;
 
+    // Act
     const auto result = config_loader.load(config_file.path());
 
+    // Assert
     ASSERT_FALSE(result);
     EXPECT_FALSE(config_loader.is_loaded());
     EXPECT_EQ(result.error().code, ConfigErrorCode::missing_required_value);
@@ -88,13 +97,16 @@ TEST(HttpServerConfigLoaderTest, RejectsMissingRequiredValue)
 
 TEST(HttpServerConfigLoaderTest, RejectsOutOfRangePort)
 {
+    // Arrange
     const TemporaryConfigFile config_file{"[tcp_server]\n"
                                           "port = 65536\n"
                                           "max_backlog = 5\n"};
     HttpServerConfigLoader config_loader;
 
+    // Act
     const auto result = config_loader.load(config_file.path());
 
+    // Assert
     ASSERT_FALSE(result);
     EXPECT_FALSE(config_loader.is_loaded());
     EXPECT_EQ(result.error().code, ConfigErrorCode::value_out_of_range);
@@ -103,13 +115,16 @@ TEST(HttpServerConfigLoaderTest, RejectsOutOfRangePort)
 
 TEST(HttpServerConfigLoaderTest, RejectsValueWithWrongType)
 {
+    // Arrange
     const TemporaryConfigFile config_file{"[tcp_server]\n"
                                           "port = \"8080\"\n"
                                           "max_backlog = 5\n"};
     HttpServerConfigLoader config_loader;
 
+    // Act
     const auto result = config_loader.load(config_file.path());
 
+    // Assert
     ASSERT_FALSE(result);
     EXPECT_FALSE(config_loader.is_loaded());
     EXPECT_EQ(result.error().code, ConfigErrorCode::invalid_value);
@@ -118,14 +133,17 @@ TEST(HttpServerConfigLoaderTest, RejectsValueWithWrongType)
 
 TEST(HttpServerConfigLoaderTest, RejectsMissingConfigurationFile)
 {
+    // Arrange
     const std::filesystem::path missing_path =
         std::filesystem::temp_directory_path() / "http-server-missing-config.toml";
     std::error_code error;
     std::filesystem::remove(missing_path, error);
     HttpServerConfigLoader config_loader;
 
+    // Act
     const auto result = config_loader.load(missing_path);
 
+    // Assert
     ASSERT_FALSE(result);
     EXPECT_FALSE(config_loader.is_loaded());
     EXPECT_EQ(result.error().code, ConfigErrorCode::parse_failure);
@@ -134,6 +152,7 @@ TEST(HttpServerConfigLoaderTest, RejectsMissingConfigurationFile)
 
 TEST(HttpServerConfigLoaderTest, FailedReloadClearsPreviousConfiguration)
 {
+    // Arrange
     HttpServerConfigLoader config_loader;
 
     {
@@ -146,8 +165,10 @@ TEST(HttpServerConfigLoaderTest, FailedReloadClearsPreviousConfiguration)
     const TemporaryConfigFile invalid_config{"[tcp_server]\n"
                                              "port = 9090\n"};
 
+    // Act
     const auto result = config_loader.load(invalid_config.path());
 
+    // Assert
     ASSERT_FALSE(result);
     EXPECT_FALSE(config_loader.is_loaded());
     EXPECT_EQ(config_loader.config().tcp_server.port, 0);

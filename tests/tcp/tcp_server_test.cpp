@@ -13,23 +13,29 @@ using core::UniqueFileDescriptor;
 
 TEST(TcpServerTest, StartWithEphemeralPortSucceeds)
 {
+    // Arrange
     TcpServer server;
     const TcpServerConfig config{.port = 0, .max_backlog = 1};
 
+    // Act
     const auto result = server.start(config);
 
+    // Assert
     EXPECT_TRUE(result);
 }
 
 TEST(TcpServerTest, StartReturnsFailureWhenCalledTwice)
 {
+    // Arrange
     TcpServer server;
     const TcpServerConfig config{.port = 0, .max_backlog = 1};
 
     ASSERT_TRUE(server.start(config));
 
+    // Act
     const auto result = server.start(config);
 
+    // Assert
     ASSERT_FALSE(result);
     EXPECT_EQ(result.error().code, ServerErrorCode::already_running);
     EXPECT_FALSE(result.error().socket_error.has_value());
@@ -37,10 +43,13 @@ TEST(TcpServerTest, StartReturnsFailureWhenCalledTwice)
 
 TEST(TcpServerTest, AcceptingWhenStoppedReturnsNotRunning)
 {
+    // Arrange
     TcpServer server;
 
+    // Act
     const auto result = server.accept_connection();
 
+    // Assert
     ASSERT_FALSE(result);
     EXPECT_EQ(result.error().code, ServerErrorCode::not_running);
     EXPECT_FALSE(result.error().socket_error.has_value());
@@ -48,6 +57,7 @@ TEST(TcpServerTest, AcceptingWhenStoppedReturnsNotRunning)
 
 TEST(TcpServerTest, StartWithBoundPortReturnsSocketFailure)
 {
+    // Arrange
     UniqueFileDescriptor reservation(::socket(AF_INET, SOCK_STREAM, 0));
     ASSERT_TRUE(reservation.is_valid());
 
@@ -63,8 +73,11 @@ TEST(TcpServerTest, StartWithBoundPortReturnsSocketFailure)
               0);
 
     TcpServer server;
+
+    // Act
     const auto result = server.start(TcpServerConfig{.port = ntohs(listener_address.sin_port), .max_backlog = 1});
 
+    // Assert
     ASSERT_FALSE(result);
     EXPECT_EQ(result.error().code, ServerErrorCode::socket_failure);
     ASSERT_TRUE(result.error().socket_error.has_value());
@@ -74,6 +87,7 @@ TEST(TcpServerTest, StartWithBoundPortReturnsSocketFailure)
 
 TEST(TcpServerTest, AcceptingConnectionReturnsConnectedSocket)
 {
+    // Arrange
     UniqueFileDescriptor reservation(::socket(AF_INET, SOCK_STREAM, 0));
     ASSERT_TRUE(reservation.is_valid());
 
@@ -97,8 +111,10 @@ TEST(TcpServerTest, AcceptingConnectionReturnsConnectedSocket)
         ::connect(client_socket.get(), reinterpret_cast<const sockaddr *>(&listener_address), sizeof(listener_address)),
         0);
 
+    // Act
     const auto result = server.accept_connection();
 
+    // Assert
     ASSERT_TRUE(result);
     EXPECT_TRUE(result->is_valid());
     EXPECT_GE(result->get(), 0);
@@ -106,12 +122,15 @@ TEST(TcpServerTest, AcceptingConnectionReturnsConnectedSocket)
 
 TEST(TcpServerTest, StopAllowsServerToRestart)
 {
+    // Arrange
     TcpServer server;
     const TcpServerConfig config{.port = 0, .max_backlog = 1};
     ASSERT_TRUE(server.start(config));
 
+    // Act
     server.stop();
 
+    // Assert
     EXPECT_FALSE(server.is_running());
     EXPECT_TRUE(server.start(config));
     EXPECT_TRUE(server.is_running());

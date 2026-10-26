@@ -66,6 +66,7 @@ INSTANTIATE_TEST_SUITE_P(Ports,
 
 TEST_P(TcpConnectionIpAddressTest, ReturnsCorrectIpAddress)
 {
+    // Arrange
     const auto &[input, expected] = GetParam();
 
     sockaddr_in client_address{};
@@ -77,14 +78,18 @@ TEST_P(TcpConnectionIpAddressTest, ReturnsCorrectIpAddress)
     }
 
     const auto connection = TcpConnectionTestFactory::create(UniqueFileDescriptor{}, client_address);
+
+    // Act
     const auto result = connection.get_client_ip_address();
 
+    // Assert
     ASSERT_TRUE(result);
     ASSERT_EQ(*result, expected);
 }
 
 TEST_P(TcpConnectionPortTest, ReturnsCorrectPort)
 {
+    // Arrange
     const auto &[input, expected] = GetParam();
 
     sockaddr_in client_address{};
@@ -96,30 +101,39 @@ TEST_P(TcpConnectionPortTest, ReturnsCorrectPort)
     }
 
     const auto connection = TcpConnectionTestFactory::create(UniqueFileDescriptor{}, client_address);
+
+    // Act
     const auto result = connection.get_client_port();
 
+    // Assert
     ASSERT_EQ(result, expected);
 }
 
 TEST(TcpConnectionTest, DefaultDescriptorIsInvalid)
 {
+    // Arrange
     sockaddr_in client_address{};
 
+    // Act
     const auto connection = TcpConnectionTestFactory::create(UniqueFileDescriptor{}, client_address);
 
+    // Assert
     EXPECT_FALSE(connection.is_valid());
     EXPECT_EQ(connection.get(), -1);
 }
 
 TEST(TcpConnectionTest, RetainsValidConnectedDescriptor)
 {
+    // Arrange
     const auto sock = ::socket(AF_INET, SOCK_STREAM, 0);
     UniqueFileDescriptor fd{sock};
 
     sockaddr_in client_address{};
 
+    // Act
     const auto connection = TcpConnectionTestFactory::create(std::move(fd), client_address);
 
+    // Assert
     ASSERT_TRUE(connection.is_valid());
     EXPECT_GE(connection.get(), 0);
 }
